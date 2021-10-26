@@ -18,7 +18,7 @@ if (!empty($_GET['course_count'])) {
 }
 if (($_GET['my_courses_flag']) == "true") {
     $my_courses_flag    = $_GET['my_courses_flag'];
-    $courses['results'] = enrol_get_my_courses(array('id', 'shortname'), 'visible DESC,sortorder ASC', $course_count);
+    $courses['results'] = enrol_get_my_courses(array('id', 'shortname'), 'id DESC', $course_count);
     //Once you have the results, filter the ones matching the search query
     $mycourses          = array();
     foreach ($courses['results'] as $objCourse) {
@@ -32,7 +32,7 @@ if (($_GET['my_courses_flag']) == "true") {
 } else {
     $courses['results'] = array_values(get_courses_search(array(
         $query
-    ), 'fullname ASC', 0, $course_count, $total));
+    ), 'id DESC', 0, $course_count, $total));
     if (empty($courses['results'])) {
         $objCourse          = new stdClass();
         $objCourse->id      = 'na';
