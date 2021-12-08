@@ -7,3 +7,11 @@ This block is best used on the 'My Home' page which allows centre positioning of
  
 
 Copyright : University of Bath
+
+CUL Customisation
+-----------------
+Changed the search display to add an icon.
+Changed the sort order of results.
+Changed the details shown in the results.
+Added Behat tests.
+Patch: cul-block_searchcourses.diff.

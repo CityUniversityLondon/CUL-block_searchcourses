@@ -1,0 +1,261 @@
+diff --git a/block_searchcourses.php b/block_searchcourses.php
+index 3e5386d..9943463 100644
+--- a/block_searchcourses.php
++++ b/block_searchcourses.php
+@@ -54,7 +54,7 @@ class block_searchcourses extends block_base
+     }
+     public function get_content()
+     {
+-        global $CFG;
++        global $CFG, $OUTPUT;
+         $this->content = new stdClass();
+         $params = array();
+         $count = "";
+@@ -78,9 +78,10 @@ class block_searchcourses extends block_base
+         ), false, $module);
+         $form_html .= "<div id=\"course_search_ac\">";
+         $form_html .= "<label for=\"ac-input\">" . get_string('search_label', 'block_searchcourses') . "</label>";
+-        $form_html .= "<input id=\"ac-input\" type = \"text\" title = \"Start here by typing a course...\"></input>";
++        $form_html .= "<input id=\"ac-input\" name=\"ac-input\" type = \"text\" title = \"Start here by typing a course...\"></input>";
+         $form_html .= "<div id=\"my_courses_container\"><label for = \"my_courses_flag\">".get_string('mycourses')."</label><input type=\"checkbox\" id=\"my_courses_flag\"  name=\"my_courses_flag\" value=\"0\"/></div>";
+         $form_html .= "<input type=\"hidden\" id=\"course_count\" value=\"$count\" />";
++        $form_html .= $OUTPUT->help_icon('search', 'block_searchcourses');
+         $form_html .= "</div>";
+         $this->content->text = $form_html;
+         return $this->content;
+diff --git a/js/module.js b/js/module.js
+index acabc58..717920a 100644
+--- a/js/module.js
++++ b/js/module.js
+@@ -60,6 +60,7 @@ M.search_autocomplete.AutoCompletePlugin = function (Y, node, params) {
+         return Y.Array.map(results, function (result) {
+             var course = result.raw;
+             var coursename = course.fullname;
++            var id = course.id;
+             var courseshortname = course.shortname;
+             var idnumber = course.idnumber;
+             var highlighted = result.highlighted;
+@@ -75,6 +76,7 @@ M.search_autocomplete.AutoCompletePlugin = function (Y, node, params) {
+             return Y.Lang.sub(courseTemplate, {
+                 coursename: coursename,
+                 courselink: courselink,
++                id: id,
+                 courseshortname : courseshortname,
+                 idnumber: idnumber,
+                 highlighted: highlighted
+@@ -93,4 +95,4 @@ M.search_autocomplete.AutoCompletePlugin = function (Y, node, params) {
+     })
+ }
+ var noResTemplate = "<div class='course_results_ac'><div class='title'>{msg}</div></div>";
+-var courseTemplate = "<div class='course_results_ac'><a href='{courselink}'><div class='title'>({courseshortname}) {highlighted}</div></a></div>";
+\ No newline at end of file
++var courseTemplate = "<div class='course_results_ac'><a href='{courselink}'><div class='title'>({id}) {highlighted}</div></a></div>";
+\ No newline at end of file
+diff --git a/lang/en/block_searchcourses.php b/lang/en/block_searchcourses.php
+index f0210ff..cd1ccac 100755
+--- a/lang/en/block_searchcourses.php
++++ b/lang/en/block_searchcourses.php
+@@ -1,6 +1,8 @@
+ <?php
+ $string['pluginname'] = 'Search Courses (Autocomplete)';
+ $string['course_count_label'] = 'Number of Courses to show';
++$string['search'] = 'Search';
++$string['search_help'] = 'Search';
+ $string['search_label'] = 'Search:';
+ $string['searchcourses:addinstance'] = 'Add Search Courses block';
+ $string['searchcourses:myaddinstance'] = 'Add Search Courses block to My Home';
+diff --git a/result.php b/result.php
+index d1035fe..03a5a9f 100644
+--- a/result.php
++++ b/result.php
+@@ -18,7 +18,7 @@ if (!empty($_GET['course_count'])) {
+ }
+ if (($_GET['my_courses_flag']) == "true") {
+     $my_courses_flag    = $_GET['my_courses_flag'];
+-    $courses['results'] = enrol_get_my_courses(array('id', 'shortname'), 'visible DESC,sortorder ASC', $course_count);
++    $courses['results'] = enrol_get_my_courses(array('id', 'shortname'), 'id DESC', $course_count);
+     //Once you have the results, filter the ones matching the search query
+     $mycourses          = array();
+     foreach ($courses['results'] as $objCourse) {
+@@ -32,7 +32,7 @@ if (($_GET['my_courses_flag']) == "true") {
+ } else {
+     $courses['results'] = array_values(get_courses_search(array(
+         $query
+-    ), 'fullname ASC', 0, $course_count, $total));
++    ), 'id DESC', 0, $course_count, $total));
+     if (empty($courses['results'])) {
+         $objCourse          = new stdClass();
+         $objCourse->id      = 'na';
+diff --git a/styles.css b/styles.css
+index c506e14..230afbc 100644
+--- a/styles.css
++++ b/styles.css
+@@ -1,5 +1,5 @@
+ .block_searchcourses .yui3-aclist-input{width:75%;}
+-.block_searchcourses .yui3-aclist-input{color:gray;margin-left:10px}
++.block_searchcourses .yui3-aclist-input{color:gray;margin-left:10px;margin-bottom: 0}
+ .block_searchcourses  .yui3-aclist-content .yui3-aclist-item{background: url([[pix:block_searchcourses|arrow_next_right]])
+ no-repeat right top;}
+ .block_searchcourses  .yui3-aclist-content .yui3-aclist-item-hover{background: url([[pix:block_searchcourses|arrow_next_right]])
+@@ -13,7 +13,8 @@ z-index:1;
+ .block_searchcourses .yui3-highlight {font-weight:normal;background-color:#B0E0E6;font-style:italic}
+ .yui3-skin-sam .yui3-aclist-content {border:none;} /* To stop ugly border*/
+ /*Checkbox Styling*/
+-#my_courses_container{display:inline-block;
++#my_courses_container{
++	display:none;
+ 	margin-left:10px;
+ 	padding-left: 5px;
+ 	padding-right: 5px;
+@@ -27,3 +28,9 @@ z-index:1;
+ 	top:-1px;
+ 	position: relative;
+ }
++#course_search_ac label {
++	display: inline-block;
++}
++.block_searchcourses.block {
++	padding-bottom: 2px;
++}
+diff --git a/tests/behat/behat_block_searchcourses.php b/tests/behat/behat_block_searchcourses.php
+new file mode 100644
+index 0000000..bf3d927
+--- /dev/null
++++ b/tests/behat/behat_block_searchcourses.php
+@@ -0,0 +1,57 @@
++<?php
++// This file is part of Moodle - http://moodle.org/
++//
++// Moodle is free software: you can redistribute it and/or modify
++// it under the terms of the GNU General Public License as published by
++// the Free Software Foundation, either version 3 of the License, or
++// (at your option) any later version.
++//
++// Moodle is distributed in the hope that it will be useful,
++// but WITHOUT ANY WARRANTY; without even the implied warranty of
++// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++// GNU General Public License for more details.
++//
++// You should have received a copy of the GNU General Public License
++// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
++
++/**
++ * Steps definitions for search courses block.
++ *
++ * @package   block_searchcourses
++ * @category  test
++ * @copyright 2020 Amanda Doughty
++ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
++ */
++
++// NOTE: no MOODLE_INTERNAL test here, this file may be required by behat before including /config.php.
++
++require_once(__DIR__ . '/../../../../lib/behat/behat_base.php');
++require_once(__DIR__ . '/../../../../lib/tests/behat/behat_general.php');
++require_once(__DIR__ . '/../../../../lib/tests/behat/behat_forms.php');
++
++use Behat\Mink\Exception\ExpectationException as ExpectationException;
++
++/**
++ * Search courses definitions.
++ *
++ * @package   block_searchcourses
++ * @category  test
++ * @copyright 2020 Amanda Doughty
++ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
++ */
++class behat_block_searchcourses extends behat_base {
++    /**
++     * Send key presses to the browser without first changing focusing, or applying the key presses to a specific
++     * element.
++     *
++     * Example usage of this step:
++     *     When I type "Penguin"
++     *
++     * @When    I type :keys in search courses 
++     * @param   string $keys The key, or list of keys, to type
++     */
++    public function i_type_in_search_courses(string $keys): void {
++        $this->execute('behat_general::i_type', [$keys]);
++        $this->wait_for_pending_js();
++    }
++}
+\ No newline at end of file
+diff --git a/tests/behat/search.feature b/tests/behat/search.feature
+new file mode 100644
+index 0000000..1016a5c
+--- /dev/null
++++ b/tests/behat/search.feature
+@@ -0,0 +1,56 @@
++@javascript @block_searchcourses
++Feature: Search courses
++  I need to be able to search for courses
++
++  Background:
++    Given the following "courses" exist:
++        | fullname | shortname | summary |
++        | A | A1 | |
++        | AB | C2 | |
++        | ABC | A3 | |
++        | BC | B4 | |
++        | BCD | B5 | |
++        | E | E6 | About a course |
++    And the following "users" exist:
++        | username | firstname | lastname | email |
++        | teacher1 | Teacher | 1 | teacher1@example.com |
++    And the following "course enrolments" exist:
++        | user | course | role |
++        | teacher1 | C2 | editingteacher |
++    And I log in as "admin"
++    And I navigate to "Appearance > Default Dashboard page" in site administration
++    And I press "Blocks editing on"
++    And I add the "Search Courses (Autocomplete)" block if not present
++    And I press "Blocks editing off"
++    And I press "Reset Dashboard for all users"
++    And I log out
++
++  @javascript
++  Scenario: Teacher can use the search courses block
++    And I log in as "teacher1"
++    And I click on "ac-input" "field"
++    And I type "a" in search courses
++    Then "//li[@data-text='A']" "xpath_element" should exist in the "#course_search_ac" "css_element"
++    And "//li[@data-text='AB']" "xpath_element" should exist in the "#course_search_ac" "css_element"
++    And "//li[@data-text='ABC']" "xpath_element" should exist in the "#course_search_ac" "css_element"
++    And "//li[@data-text='BC']" "xpath_element" should not exist in the "#course_search_ac" "css_element"
++    And "//li[@data-text='BCD']" "xpath_element" should not exist in the "#course_search_ac" "css_element"
++    And "//li[@data-text='E']" "xpath_element" should exist in the "#course_search_ac" "css_element"
++    And I type "b" in search courses
++    And I wait "10" seconds
++    Then "//li[@data-text='A']" "xpath_element" should not exist in the "#course_search_ac" "css_element"
++    And "//li[@data-text='AB']" "xpath_element" should exist in the "#course_search_ac" "css_element"
++    And "//li[@data-text='ABC']" "xpath_element" should exist in the "#course_search_ac" "css_element"
++    And "//li[@data-text='BC']" "xpath_element" should not exist in the "#course_search_ac" "css_element"
++    And "//li[@data-text='BCD']" "xpath_element" should not exist in the "#course_search_ac" "css_element"
++    And "//li[@data-text='E']" "xpath_element" should exist in the "#course_search_ac" "css_element"
++    And I press the backspace key
++    And I press the backspace key
++    And I type "c" in search courses 
++    Then "//li[@data-text='A']" "xpath_element" should not exist in the "#course_search_ac" "css_element"
++    And "//li[@data-text='AB']" "xpath_element" should exist in the "#course_search_ac" "css_element"
++    And "//li[@data-text='ABC']" "xpath_element" should exist in the "#course_search_ac" "css_element"
++    And "//li[@data-text='BC']" "xpath_element" should exist in the "#course_search_ac" "css_element"
++    And "//li[@data-text='BCD']" "xpath_element" should exist in the "#course_search_ac" "css_element"
++    And "//li[@data-text='E']" "xpath_element" should exist in the "#course_search_ac" "css_element"
++    And I log out
+diff --git a/version.php b/version.php
+index c63cc9c..87226da 100644
+--- a/version.php
++++ b/version.php
+@@ -25,8 +25,8 @@
+ 
+ defined('MOODLE_INTERNAL') || die();
+ 
+-$plugin->version   = 2014020703;        // The current plugin version (Date: YYYYMMDDXX)
+-$plugin->requires  = 2013111800.07;        // Requires this Moodle version
+-$plugin->release  = 2014020700;
++$plugin->version   = 2014122600;        // The current plugin version (Date: YYYYMMDDXX)
++$plugin->requires  = 2014041100;        // Requires this Moodle version
++$plugin->release  = 2014122600;
+ $plugin->maturity = MATURITY_STABLE;
+ $plugin->component = 'block_searchcourses'; // Full name of the plugin (used for diagnostics)
